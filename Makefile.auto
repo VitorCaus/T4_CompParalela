@@ -1,0 +1,74 @@
+# Makefile.master
+MPI_MAKE  := Makefile.mpi
+
+LISTA_DIR := listas
+RESULT_DIR := resultados
+
+# Inicializa vazio
+LISTA_PATH := "" 
+# Inicializa lista vazia
+LISTAS := ""
+
+# Se SUBDIR for informado, usamos apenas essa subpasta
+ifdef SUBDIR
+	LISTA_PATH := $(LISTA_DIR)/$(SUBDIR)
+else
+	LISTA_PATH := $(LISTA_DIR)
+endif
+
+# Busca arquivos dentro da(s) pasta(s) (diretos ou em subpastas)
+ifdef SUBDIR
+	LISTAS := $(wildcard $(LISTA_PATH)/*.txt)
+else
+	LISTAS := $(wildcard $(LISTA_PATH)/fraca/*.txt) \
+						$(wildcard $(LISTA_PATH)/forte/*.txt) \
+						$(wildcard $(LISTA_PATH)/sequencial/*.txt)
+endif
+
+.PHONY: all executar_todos clean
+all: executar_todos
+
+executar_todos:
+	@bash -c '\
+	LISTA_PATH="$(LISTA_DIR)"; \
+	if [ ! -z "$(SUBDIR)" ]; then \
+		LISTA_PATH="$(LISTA_DIR)/$(SUBDIR)"; \
+	fi; \
+	LISTAS=$$(find "$$LISTA_PATH" -type f -name "*.txt"); \
+	if [ -z "$$LISTAS" ]; then \
+		echo "Nenhum arquivo encontrado em $$LISTA_PATH/"; \
+		exit 1; \
+	fi; \
+	for lista in $$LISTAS; do \
+		if [ ! -f "$$lista" ]; then continue; fi; \
+		echo "==== Processando $$lista ===="; \
+		subdir=$$(basename $$(dirname "$$lista")); \
+		mkdir -p "$(RESULT_DIR)/$$subdir"; \
+		N=$$(echo "$$lista" | sed -E "s/.*_N([0-9]+)_?T([0-9]+).*/\1/"); \
+		T=$$(echo "$$lista" | sed -E "s/.*_N([0-9]+)_?T([0-9]+).*/\2/"); \
+		B=$$(grep -E '^B=' "$$lista" | sed 's/B=//'); \
+		S=$$(grep -E '^S=' "$$lista" | sed 's/S=//' || echo 0); \
+		if [ -z "$$N" ] || [ -z "$$T" ]; then \
+			echo "⚠️  ERRO: não foi possível extrair N/T de $$lista"; \
+			exit 1; \
+		fi; \
+		BASENAME=$$(basename "$$lista" .txt); \
+		PREFIXO=$$(echo "$$BASENAME" | sed -E "s/^([a-z]+)_N[0-9]+_?T[0-9]+$$/\\1/"); \
+		if [ -z "$$PREFIXO" ]; then \
+			echo "⚠️  ERRO: não foi possível extrair prefixo de $$lista"; \
+			exit 1; \
+		fi; \
+		echo "Usando N=$$N T=$$T V=$$V prefixo=$$PREFIXO subpasta=$$subdir"; \
+# 		cat "$$lista" > "$(OUTPUT_WORDS)"; \
+# 		echo "Gerando hashes com $(HASH_MAKE)..."; \
+# 		make -B -f "$(HASH_MAKE)" LISTA="$(OUTPUT_WORDS)" OUTPUT="$(OUTPUT_HASHES)" || { echo "Falha em $(HASH_MAKE)"; exit 1; }; \
+		OUT="$(RESULT_DIR)/$$subdir/$${PREFIXO}_N$${N}T$${T}_$${V}.txt"; \
+		echo "Rodando MPI (saida -> $$OUT)..."; \
+		make -B -f "$(MPI_MAKE)" run N="$$N" T="$$T" B="$$B" S="$$S"> "$$OUT" 2>&1 || { echo "Falha em $(MPI_MAKE)"; exit 1; }; \
+		echo "Concluído $$lista -> $$OUT"; \
+	done'
+
+
+clean:
+	@rm -f $(OUTPUT_WORDS) $(OUTPUT_HASHES)
+	@find $(RESULT_DIR) -type f -name '*.txt' -delete || true

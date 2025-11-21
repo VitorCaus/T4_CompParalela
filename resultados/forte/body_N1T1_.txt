@@ -1,0 +1,8 @@
+make[1]: Entering directory '/home/cp14/T4_CompParalela'
+ladcomp -env mpicc nbody.c -o nbody -lm
+mpicc nbody.c -o nbody -lm
+srun -N 1 -n 1 --overcommit --exclusive ./nbody 4096 10000
+Modo: SEQUENCIAL (1 processo)
+Simulação Sequencial Concluída. Posição corpo 0: -22256.499
+Tempo Total: 6264.288881 s
+make[1]: Leaving directory '/home/cp14/T4_CompParalela'

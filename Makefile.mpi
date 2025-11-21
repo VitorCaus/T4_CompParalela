@@ -1,0 +1,35 @@
+# ====== VARIÁVEIS ======
+# Nome do arquivo-fonte (sem extensão)
+PROG = nbody
+
+# Número de máquinas e threads        
+N ?= 2
+T ?= 8
+B ?= 40
+S ?= 0
+# ====== COMANDOS ======
+# Compilador MPI via ladcomp
+CC = ladcomp -env mpicc
+# Nome do executável
+EXEC = $(PROG)
+
+# ====== REGRAS ======
+
+# Regra padrão: compilar
+all: $(EXEC)
+
+# Compilação
+$(EXEC): $(PROG).c
+	$(CC) $< -o $@ -lm
+
+# Execução com srun
+run: $(EXEC)
+	srun -N $(N) -n $(T) --overcommit --exclusive ./$(EXEC) $(B) $(S)
+
+# Limpeza
+clean:
+	rm -f $(EXEC)
+
+# Limpeza completa
+purge: clean
+	rm -f *.o

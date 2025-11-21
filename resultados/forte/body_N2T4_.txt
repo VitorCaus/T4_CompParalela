@@ -1,0 +1,7 @@
+make[1]: Entering directory '/home/cp14/T4_CompParalela'
+ladcomp -env mpicc nbody.c -o nbody -lm
+mpicc nbody.c -o nbody -lm
+srun -N 2 -n 4 --overcommit --exclusive ./nbody 4096 10000
+Paralelo (4 procs): Tempo = 1621.657689 s
+Body 0 Pos: -22358.876, -3126.562
+make[1]: Leaving directory '/home/cp14/T4_CompParalela'
