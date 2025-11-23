@@ -1,6 +1,6 @@
 # ====== VARIÁVEIS ======
 # Nome do arquivo-fonte (sem extensão)
-PROG = nbody
+PROG = nbodyGather
 
 # Número de máquinas e threads        
 N ?= 2
